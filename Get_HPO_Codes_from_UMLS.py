@@ -45,10 +45,19 @@ class HealthTermFinder:
             HTTPError: If the request fails.
         """
         url = f"{self.base_uri}{endpoint}"
+        
         params['apiKey'] = self.apikey
-        response = self.session.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = self.session.get(url, params=params)
+            
+            response.raise_for_status()
+            return response.json()
+        except requests.HTTPError as e:
+            if e.response.status_code == 404:
+                print("Resource not found. Please check the URL or identifier.")
+            else:
+                print(f"HTTP Error occurred: {e}")
+            return None
 
     def get_last_part_of_url(self, url):
         """
@@ -99,14 +108,25 @@ class HealthTermFinder:
         else:
             params['sabs'] = 'HPO,SNOMEDCT_US'
         
-        atoms = self.make_request(content_endpoint, params)['result']
-        for atom in atoms:
-            print(f"Name: {atom['name']}")
-            print(f"Code: {self.get_last_part_of_url(atom['code'])}")
-            print(f"Source Vocabulary: {atom['rootSource']}\n")
+        atoms = self.make_request(content_endpoint, params)
+        
+        if not atoms or not atoms['result']:
+            print("No specific atoms found for HPO or SNOMEDCT_US, checking for any available atoms.")
+            params['sabs'] = 'MDR'
+            params.pop('ttys')
+            atoms = self.make_request(content_endpoint, params)
+            
+
+        if atoms:
+            for atom in atoms['result']:
+                print(f"Name: {atom['name']}")
+                print(f"Code: {self.get_last_part_of_url(atom['code'])}")
+                print(f"Source Vocabulary: {atom['rootSource']}\n")
+        else:
+            print("No atoms found for the given identifier.")
 
 if __name__ == "__main__":
-    apikey = "" 
+    apikey = "3c852bbc-b8e3-4c55-9747-95404a9625f5" 
     tool = HealthTermFinder(apikey)
     identifier = input("Enter identifier: ")
     first_ui = tool.get_first_ui(identifier)
