@@ -54,7 +54,7 @@ class HealthTermFinder:
             return response.json()
         except requests.HTTPError as e:
             if e.response.status_code == 404:
-                print("Resource not found. Please check the URL or identifier.")
+              return None
             else:
                 print(f"HTTP Error occurred: {e}")
             return None
@@ -73,60 +73,67 @@ class HealthTermFinder:
 
     def get_first_ui(self, string):
         """
-        Searches for and returns the first unique identifier (UI) for a given search string.
-
+        Searches for and returns the first 3 unique identifiers (UI) for a given search string.
+    
         Parameters:
             string (str): The search string used to query the UMLS API.
-
+    
         Returns:
-            str: The first unique identifier (UI) found, or None if no results are found.
+            list: The first three unique identifiers (UI) found, or an empty list if no results are found.
         """
         content_endpoint = f"/rest/search/{self.version}"
         page = 0
+        relevant_ui = []
+    
         while True:
             page += 1
             params = {'string': string, 'pageNumber': page}
-            results = self.make_request(content_endpoint, params)['result']['results']
+            response = self.make_request(content_endpoint, params)
+            results = response.get('result', {}).get('results', [])
+    
             if results:
-                return results[0]['ui']
-            if page == 1:
-                print('No results found.\n')
-                return None
+                for result in results[:3]:  # Get up to the first 3 results
+                    relevant_ui.append(result['ui'])
+                break  # Exit the loop after collecting the necessary UIs
+    
+            if page == 1 and not results:
+                print('No results found.')
+                break  # Exit the loop if no results on the first page
+
+        return relevant_ui
+    
+
 
     def get_atoms(self, identifier, source=None):
         """
         Retrieves and prints details for atoms associated with a given identifier, optionally filtering by source.
 
         Parameters:
-            identifier (str): The unique identifier for which to retrieve atom details.
+            identifier (str): The unique identifiers for which to retrieve atom details.
             source (str, optional): The source by which to filter the atoms. Defaults to None.
         """
-        content_endpoint = f"/rest/content/{self.version}/CUI/{identifier}/atoms"
-        params = {'ttys': 'PT'}
-        if source:
-            params['sabs'] = source
-        else:
-            params['sabs'] = 'HPO,SNOMEDCT_US'
         
-        atoms = self.make_request(content_endpoint, params)
+        for i in identifier:
         
-        if not atoms or not atoms['result']:
-            print("No specific atoms found for HPO or SNOMEDCT_US, checking for any available atoms.")
-            params['sabs'] = 'MDR'
-            params.pop('ttys')
+            content_endpoint = f"/rest/content/{self.version}/CUI/{i}/atoms"
+            params = {'ttys': 'PT'}
+            if source:
+                params['sabs'] = source
+            else:
+                params['sabs'] = 'HPO,SNOMEDCT_US'
+            
             atoms = self.make_request(content_endpoint, params)
             
-
-        if atoms:
-            for atom in atoms['result']:
-                print(f"Name: {atom['name']}")
-                print(f"Code: {self.get_last_part_of_url(atom['code'])}")
-                print(f"Source Vocabulary: {atom['rootSource']}\n")
-        else:
-            print("No atoms found for the given identifier.")
+            if atoms:
+                for atom in atoms['result']:
+                    print(f"Name: {atom['name']}")
+                    print(f"Code: {self.get_last_part_of_url(atom['code'])}")
+                    print(f"Source Vocabulary: {atom['rootSource']}\n")
+                break
+            
 
 if __name__ == "__main__":
-    apikey = "3c852bbc-b8e3-4c55-9747-95404a9625f5" 
+    apikey = "" 
     tool = HealthTermFinder(apikey)
     identifier = input("Enter identifier: ")
     first_ui = tool.get_first_ui(identifier)
