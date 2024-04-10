@@ -50,6 +50,7 @@ class HealthTermFinder:
         try:
             response = self.session.get(url, params=params)
             
+            
             response.raise_for_status()
             return response.json()
         except requests.HTTPError as e:
@@ -73,7 +74,7 @@ class HealthTermFinder:
 
     def get_first_ui(self, string):
         """
-        Searches for and returns the first 3 unique identifiers (UI) for a given search string.
+        Searches for and returns the first 10 unique identifiers (UI) for a given search string.
     
         Parameters:
             string (str): The search string used to query the UMLS API.
@@ -87,15 +88,31 @@ class HealthTermFinder:
     
         while True:
             page += 1
-            params = {'string': string, 'pageNumber': page, 'partialSearch': 'true', 'searchType': 'words', 'includeSuppressible': 'true'}
+            params = {'string': string, 'pageNumber': page, 'inputType': 'atom', 'sabs': '', 'partialSearch': 'true', 'searchType': 'words'}
             response = self.make_request(content_endpoint, params)
             results = response.get('result', {}).get('results', [])
+             
+            
+            # Using a different sabs specification
+            params1 = {'string': identifier, 'pageNumber': 0, 'inputType': 'atom', 'sabs': 'MTH', 'partialSearch': 'true', 'searchType': 'words'}
+            response1 = self.make_request(f"/rest/search/{self.version}", params1)
+            results1 = response1.get('result', {}).get('results', [])
+        
     
             if results:
-                for result in results[:3]:  # Get up to the first 3 results
+                
+                for result in results[:10]:  # Get up to the first 10 results
                     relevant_ui.append(result['ui'])
+                           
+            
+            if results1:
+                
+                for result in results1[:10]:  # Get up to the first 10 results
+                    relevant_ui.append(result['ui'])
+                
                 break  # Exit the loop after collecting the necessary UIs
     
+            
             if page == 1 and not results:
                 print('No results found.')
                 break  # Exit the loop if no results on the first page
@@ -104,7 +121,7 @@ class HealthTermFinder:
     
 
 
-    def get_atoms(self, identifier, source=None):
+    def get_atoms(self, first_ui, source=None):
         """
         Retrieves and prints details for atoms associated with a given identifier, optionally filtering by source.
 
@@ -113,7 +130,7 @@ class HealthTermFinder:
             source (str, optional): The source by which to filter the atoms. Defaults to None.
         """
         
-        for i in identifier:
+        for i in first_ui:
         
             content_endpoint = f"/rest/content/{self.version}/CUI/{i}/atoms"
             params = {'ttys': 'PT'}
@@ -131,6 +148,10 @@ class HealthTermFinder:
                     print(f"Source Vocabulary: {atom['rootSource']}\n")
                 break
             
+           
+                
+    
+                 
 
 if __name__ == "__main__":
     apikey = "" 
@@ -139,3 +160,4 @@ if __name__ == "__main__":
     first_ui = tool.get_first_ui(identifier)
     if first_ui:
         tool.get_atoms(first_ui)
+ 
