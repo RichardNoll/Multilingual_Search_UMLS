@@ -87,7 +87,7 @@ class HealthTermFinder:
     
         while True:
             page += 1
-            params = {'string': string, 'pageNumber': page}
+            params = {'string': string, 'pageNumber': page, 'partialSearch': 'true', 'searchType': 'words', 'includeSuppressible': 'true'}
             response = self.make_request(content_endpoint, params)
             results = response.get('result', {}).get('results', [])
     
