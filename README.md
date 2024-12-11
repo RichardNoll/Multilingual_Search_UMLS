@@ -55,3 +55,20 @@ Before using the HealthTermFinder, obtain an API key from the UMLS API website. 
 
 ## Conclusion
 HealthTermFinder is a powerful tool for medical researchers and healthcare professionals who need to access standardized medical terminology across different languages, leveraging the comprehensive resources of the UMLS API.
+
+## Example 
+Enter identifier: husten
+
+Output: 
+
+Name: Cough
+Code: HP:0012735
+Source Vocabulary: HPO
+
+Name: Coughing
+Code: 263731006
+Source Vocabulary: SNOMEDCT_US
+
+Name: Cough
+Code: 49727002
+Source Vocabulary: SNOMEDCT_US
