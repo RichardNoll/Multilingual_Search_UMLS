@@ -60,7 +60,7 @@ HealthTermFinder is a powerful tool for medical researchers and healthcare profe
 **Enter identifier:** husten
 
 **Output:**
-
+```
 Name: Cough
 Code: HP:0012735
 Source Vocabulary: HPO
@@ -72,3 +72,4 @@ Source Vocabulary: SNOMEDCT_US
 Name: Cough
 Code: 49727002
 Source Vocabulary: SNOMEDCT_US
+```
